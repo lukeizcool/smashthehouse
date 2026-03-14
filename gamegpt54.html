@@ -1,0 +1,192 @@
+Skip to content
+lukeizcool
+smashthehouse
+Repository navigation
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+Files
+Go to file
+t
+game.html
+gamev2codex
+smashthehouse
+/
+game.html
+in
+main
+
+Edit
+
+Preview
+Indent mode
+
+Spaces
+Indent size
+
+2
+Line wrap mode
+
+No wrap
+Editing game.html file contents
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMASH THE HOUSE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@300;400;700&display=swap');
+
+  :root {
+    --red: #ff2a2a;
+    --orange: #ff6a00;
+    --yellow: #ffd200;
+    --dark: #0a0a0f;
+    --panel: rgba(10,10,20,0.92);
+    --glow: 0 0 20px rgba(255,106,0,0.6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--dark);
+    font-family: 'Oswald', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ── TITLE SCREEN ── */
+  #titleScreen {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, #1a0a00 0%, #0a0a0f 70%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    transition: opacity 0.6s;
+  }
+
+  .title-dust {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,106,0,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 60%, rgba(255,42,42,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 50% 10%, rgba(255,210,0,0.2) 0%, transparent 100%);
+    animation: dustFloat 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes dustFloat { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+
+  .game-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: clamp(3rem, 10vw, 7rem);
+    color: var(--yellow);
+    text-shadow:
+      0 0 30px rgba(255,210,0,0.8),
+      0 0 60px rgba(255,106,0,0.5),
+      4px 4px 0 #8b3a00,
+      8px 8px 0 #5a2500;
+    letter-spacing: 4px;
+    animation: titlePulse 2s ease-in-out infinite alternate;
+    position: relative; z-index: 1;
+  }
+
+  @keyframes titlePulse {
+    from { text-shadow: 0 0 30px rgba(255,210,0,0.8), 0 0 60px rgba(255,106,0,0.5), 4px 4px 0 #8b3a00, 8px 8px 0 #5a2500; }
+    to   { text-shadow: 0 0 50px rgba(255,210,0,1),   0 0 100px rgba(255,106,0,0.8), 4px 4px 0 #8b3a00, 8px 8px 0 #5a2500; }
+  }
+
+  .subtitle {
+    font-size: 1.2rem; letter-spacing: 8px; color: var(--orange);
+    margin-top: -8px; margin-bottom: 50px;
+    text-transform: uppercase;
+    position: relative; z-index: 1;
+  }
+
+  .btn-start {
+Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab to move to the next interactive element on the page.
