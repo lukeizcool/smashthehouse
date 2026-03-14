@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMASH THE HOUSE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@300;400;700&display=swap');
+
+  :root {
+    --red: #ff2a2a;
+    --orange: #ff6a00;
+    --yellow: #ffd200;
+    --dark: #0a0a0f;
+    --panel: rgba(10,10,20,0.92);
+    --glow: 0 0 20px rgba(255,106,0,0.6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--dark);
+    font-family: 'Oswald', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ── TITLE SCREEN ── */
+  #titleScreen {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, #1a0a00 0%, #0a0a0f 70%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    transition: opacity 0.6s;
+  }
+
+  .title-dust {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,106,0,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 60%, rgba(255,42,42,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 50% 10%, rgba(255,210,0,0.2) 0%, transparent 100%);
+    animation: dustFloat 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes dustFloat { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+
+  .game-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: clamp(3rem, 10vw, 7rem);
+    color: var(--yellow);
+    text-shadow:
+      0 0 30px rgba(255,210,0,0.8),
+      0 0 60px rgba(255,106,0,0.5),
+      4px 4px 0 #8b3a00,
+      8px 8px 0 #5a2500;
+    letter-spacing: 4px;
+    animation: titlePulse 2s ease-in-out infinite alternate;
+    position: relative; z-index: 1;
+  }
+
+  @keyframes titlePulse {
+    from { text-shadow: 0 0 30px rgba(255,210,0,0.8), 0 0 60px rgba(255,106,0,0.5), 4px 4px 0 #8b3a00, 8px 8px 0 #5a2500; }
+    to   { text-shadow: 0 0 50px rgba(255,210,0,1),   0 0 100px rgba(255,106,0,0.8), 4px 4px 0 #8b3a00, 8px 8px 0 #5a2500; }
+  }
+
+  .subtitle {
+    font-size: 1.2rem; letter-spacing: 8px; color: var(--orange);
+    margin-top: -8px; margin-bottom: 50px;
+    text-transform: uppercase;
+    position: relative; z-index: 1;
+  }
+
+  .btn-start {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.4rem; letter-spacing: 3px;
+    color: var(--dark); background: var(--yellow);
+    border: none; padding: 16px 48px;
+    cursor: pointer; position: relative; z-index: 1;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: all 0.15s;
+    box-shadow: 0 4px 20px rgba(255,210,0,0.4);
+  }
+
+  .btn-start:hover {
+    background: var(--orange); color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 6px 30px rgba(255,106,0,0.7);
+  }
+
+  .controls-hint {
+    position: absolute; bottom: 30px;
+    color: rgba(255,255,255,0.4); font-size: 0.85rem; letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* ── GAME CANVAS ── */
+  #gameCanvas {
+    position: fixed; inset: 0;
+    display: none;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: none;
+    padding: 12px 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 10;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .hud-block {
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .hud-label {
+    font-size: 0.6rem; letter-spacing: 4px; color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+
+  .hud-value {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.8rem; color: var(--yellow);
+    line-height: 1;
+    text-shadow: 0 0 15px rgba(255,210,0,0.6);
+  }
+
+  #timerValue {
+    font-size: 2.2rem;
+    transition: color 0.3s;
+  }
+
+  #timerValue.danger { color: var(--red); animation: timerBlink 0.5s infinite; }
+
+  @keyframes timerBlink { 50% { opacity: 0.4; } }
+
+  .hud-spacer { flex: 1; }
+
+  /* destruction bar */
+  .destruction-bar-wrap {
+    flex: 1; max-width: 300px;
+  }
+
+  .destruction-bar-bg {
+    width: 100%; height: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    position: relative; overflow: hidden;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .destruction-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange), var(--yellow));
+    width: 0%;
+    transition: width 0.2s;
+    position: relative;
+  }
+
+  .destruction-bar-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0; width: 4px;
+    background: #fff;
+    box-shadow: 0 0 8px var(--yellow);
+    opacity: 0.9;
+  }
+
+  /* ── POWER BAR ── */
+  #powerBar {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .power-slot {
+    width: 64px; height: 64px;
+    background: rgba(10,10,20,0.9);
+    border: 2px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: all 0.2s;
+    clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+    position: relative;
+  }
+
+  .power-slot:hover { border-color: var(--yellow); transform: translateY(-4px); box-shadow: var(--glow); }
+  .power-slot.active { border-color: var(--yellow); background: rgba(255,210,0,0.15); }
+  .power-slot.locked { opacity: 0.4; cursor: not-allowed; }
+
+  .power-icon { font-size: 1.8rem; line-height: 1; }
+  .power-label { font-size: 0.45rem; letter-spacing: 1px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-top: 2px; }
+  .power-cost { position: absolute; top: 3px; right: 5px; font-size: 0.55rem; color: var(--yellow); font-family: 'Black Ops One', cursive; }
+
+  /* ── COMBO ── */
+  #comboDisplay {
+    position: fixed; top: 80px; left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Black Ops One', cursive;
+    font-size: 2rem; color: var(--orange);
+    text-shadow: 0 0 20px rgba(255,106,0,0.8);
+    pointer-events: none; z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  /* ── LEADERBOARD PANEL ── */
+  #leaderboardPanel {
+    position: fixed; right: 0; top: 80px;
+    width: 200px;
+    background: var(--panel);
+    border-left: 2px solid rgba(255,106,0,0.3);
+    padding: 12px;
+    display: none;
+    z-index: 10;
+  }
+
+  .lb-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: 0.75rem; color: var(--orange);
+    letter-spacing: 3px; margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,106,0,0.3);
+    padding-bottom: 6px;
+  }
+
+  .lb-entry {
+    display: flex; gap: 8px; align-items: center;
+    padding: 4px 0;
+    font-size: 0.75rem; color: rgba(255,255,255,0.7);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .lb-rank { color: var(--yellow); font-family: 'Black Ops One', cursive; width: 20px; }
+  .lb-name { flex: 1; }
+  .lb-score { color: var(--orange); }
+
+  /* ── GAME OVER / WIN ── */
+  #endScreen {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(4px);
+  }
+
+  .end-title {
+    font-family: 'Black Ops One', cursive;
+    font-size: clamp(3rem, 8vw, 6rem);
+    margin-bottom: 10px;
+    animation: endPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes endPop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .end-score { font-size: 1.2rem; color: rgba(255,255,255,0.7); letter-spacing: 4px; margin-bottom: 6px; }
+  .end-score-val { font-family: 'Black Ops One', cursive; font-size: 3rem; color: var(--yellow); text-shadow: 0 0 20px rgba(255,210,0,0.6); margin-bottom: 30px; }
+
+  .end-btns { display: flex; gap: 16px; }
+
+  .btn-end {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1rem; letter-spacing: 2px;
+    border: 2px solid;
+    padding: 12px 32px;
+    cursor: pointer;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    transition: all 0.15s;
+  }
+
+  .btn-end.primary { background: var(--yellow); border-color: var(--yellow); color: var(--dark); }
+  .btn-end.primary:hover { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .btn-end.secondary { background: transparent; border-color: rgba(255,255,255,0.3); color: #fff; }
+  .btn-end.secondary:hover { border-color: #fff; }
+
+  /* ── PARTICLES ── */
+  #particleCanvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* ── CROSSHAIR ── */
+  #crosshair {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px; height: 24px;
+    pointer-events: none; z-index: 8;
+    display: none;
+  }
+
+  #crosshair::before, #crosshair::after {
+    content: ''; position: absolute; background: rgba(255,210,0,0.9);
+    box-shadow: 0 0 6px rgba(255,210,0,0.6);
+  }
+
+  #crosshair::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%); }
+  #crosshair::after  { width: 100%; height: 2px; top: 50%; transform: translateY(-50%); }
+
+  /* ── UNLOCK TOAST ── */
+  #unlockToast {
+    position: fixed; top: 80px; left: 20px;
+    background: var(--panel);
+    border: 2px solid var(--yellow);
+    padding: 12px 20px;
+    z-index: 20;
+    display: none;
+    animation: toastSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes toastSlide { from { transform: translateX(-120%); } to { transform: translateX(0); } }
+
+  .toast-title { font-family: 'Black Ops One', cursive; color: var(--yellow); font-size: 0.8rem; letter-spacing: 2px; }
+  .toast-text  { color: rgba(255,255,255,0.7); font-size: 0.8rem; margin-top: 2px; }
+
+  /* shake effect */
+  @keyframes shake {
+    0%,100%{transform:translate(0,0)}
+    20%{transform:translate(-4px,2px)}
+    40%{transform:translate(4px,-2px)}
+    60%{transform:translate(-3px,3px)}
+    80%{transform:translate(3px,-1px)}
+  }
+
+  .shake { animation: shake 0.3s ease; }
+</style>
+</head>
+<body>
+
+<!-- TITLE -->
+<div id="titleScreen">
+  <div class="title-dust"></div>
+  <div class="game-title">SMASH<br>THE HOUSE</div>
+  <div class="subtitle">Total Destruction</div>
+  <button class="btn-start" onclick="startGame()">START GAME</button>
+  <div class="controls-hint">WASD / Arrow Keys · Click to Smash · 1-5 Powers</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-block">
+    <div class="hud-label">Time</div>
+    <div class="hud-value" id="timerValue">3:00</div>
+  </div>
+  <div class="hud-spacer"></div>
+  <div class="hud-block" style="flex:1; max-width:320px;">
+    <div class="hud-label" style="align-self:flex-start">Destruction</div>
+    <div class="destruction-bar-wrap" style="width:100%">
+      <div class="destruction-bar-bg">
+        <div class="destruction-bar-fill" id="destroyBar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hud-spacer"></div>
+  <div class="hud-block">
+    <div class="hud-label">Score</div>
+    <div class="hud-value" id="scoreValue">0</div>
+  </div>
+</div>
+
+<!-- CROSSHAIR -->
+<div id="crosshair"></div>
+
+<!-- COMBO -->
+<div id="comboDisplay" id="comboDisplay">COMBO x1</div>
+
+<!-- POWER BAR -->
+<div id="powerBar">
+  <div class="power-slot active" data-power="fist" onclick="selectPower('fist')">
+    <div class="power-icon">👊</div>
+    <div class="power-label">Fist</div>
+  </div>
+  <div class="power-slot" data-power="hammer" onclick="selectPower('hammer')">
+    <div class="power-icon">🔨</div>
+    <div class="power-label">Hammer</div>
+    <div class="power-cost">500</div>
+  </div>
+  <div class="power-slot locked" data-power="chainsaw" onclick="selectPower('chainsaw')">
+    <div class="power-icon">⚡</div>
+    <div class="power-label">Chainsaw</div>
+    <div class="power-cost">2K</div>
+  </div>
+  <div class="power-slot locked" data-power="psychic" onclick="selectPower('psychic')">
+    <div class="power-icon">🌀</div>
+    <div class="power-label">Psychic</div>
+    <div class="power-cost">5K</div>
+  </div>
+  <div class="power-slot locked" data-power="explosion" onclick="selectPower('explosion')">
+    <div class="power-icon">💥</div>
+    <div class="power-label">Nuke</div>
+    <div class="power-cost">10K</div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboardPanel">
+  <div class="lb-title">🏆 Daily Top</div>
+  <div id="lbEntries"></div>
+</div>
+
+<!-- PARTICLES -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- GAME CANVAS -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- UNLOCK TOAST -->
+<div id="unlockToast">
+  <div class="toast-title" id="toastTitle">🔓 UNLOCKED!</div>
+  <div class="toast-text" id="toastText">New power available</div>
+</div>
+
+<!-- END SCREEN -->
+<div id="endScreen">
+  <div class="end-title" id="endTitle" style="color:var(--yellow)">TIME'S UP!</div>
+  <div class="end-score">Final Score</div>
+  <div class="end-score-val" id="endScoreVal">0</div>
+  <div id="endDestructionText" style="color:var(--orange);letter-spacing:3px;margin-bottom:20px;font-size:0.9rem;"></div>
+  <div class="end-btns">
+    <button class="btn-end primary" onclick="startGame()">PLAY AGAIN</button>
+    <button class="btn-end secondary" onclick="showTitle()">MENU</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  SMASH THE HOUSE — Web Prototype
+// ════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const pCanvas = document.getElementById('particleCanvas');
+const pCtx = pCanvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = pCanvas.width = window.innerWidth;
+  H = canvas.height = pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { resize(); if (gameRunning) buildHouse(); });
+resize();
+
+// ── STATE ──
+let gameRunning = false;
+let score = 0;
+let timeLeft = 180;
+let timerInterval;
+let currentPower = 'fist';
+let combo = 0;
+let comboTimer = null;
+let particles = [];
+let camera = { x: 0, y: 0 };
+let playerX, playerY;
+let playerDir = 1;
+let playerAnim = 0;
+let pieces = [];
+let totalDestroyable = 0;
+let destroyed = 0;
+let shaking = false;
+let shakeTime = 0;
+let keys = {};
+let mouseX = 0, mouseY = 0;
+let lastScore = 0;
+
+// ── POWERS ──
+const POWERS = {
+  fist:      { radius: 60,  damage: 1, unlockAt: 0,     color: '#ff9955' },
+  hammer:    { radius: 90,  damage: 2, unlockAt: 500,   color: '#ffcc33' },
+  chainsaw:  { radius: 110, damage: 3, unlockAt: 2000,  color: '#ff4444' },
+  psychic:   { radius: 180, damage: 5, unlockAt: 5000,  color: '#aa55ff' },
+  explosion: { radius: 280, damage:10, unlockAt: 10000, color: '#ff6600' }
+};
+
+let unlockedPowers = new Set(['fist']);
+
+// ── LEADERBOARD ──
+let leaderboard = [
+  { name: 'DESTROYER', score: 98420 },
+  { name: 'SMASHR',    score: 87310 },
+  { name: 'WRECKER',   score: 72580 },
+  { name: 'BREAKER',   score: 65990 },
+  { name: 'YOU',       score: 0     },
+];
+
+// ════════════════════════════════════════════
+//  HOUSE BUILDING
+// ════════════════════════════════════════════
+
+function buildHouse() {
+  pieces = [];
+  const cx = W / 2;
+  const cy = H * 0.55;
+  const scale = Math.min(W, H) / 900;
+
+  function addPiece(opts) {
+    const p = {
+      id: pieces.length,
+      x: opts.x, y: opts.y,
+      w: opts.w, h: opts.h,
+      color: opts.color,
+      strokeColor: opts.strokeColor || 'rgba(0,0,0,0.4)',
+      hp: opts.hp || 3,
+      maxHp: opts.hp || 3,
+      type: opts.type || 'wall',
+      label: opts.label || '',
+      destroyed: false,
+      vx: 0, vy: 0, rot: 0, rotV: 0,
+      falling: false,
+      fallTimer: 0,
+      alpha: 1,
+      detail: opts.detail || [],
+      minSize: opts.minSize || 20,
+      children: [],
+      parentId: opts.parentId !== undefined ? opts.parentId : -1,
+      points: opts.points || null,
+      zIndex: opts.zIndex || 0,
+    };
+    pieces.push(p);
+    return p;
+  }
+
+  const s = scale;
+
+  // Ground
+  addPiece({ x: cx - 500*s, y: cy + 200*s, w: 1000*s, h: 40*s, color: '#5a8a3a', strokeColor:'#3a6a1a', hp:999, type:'ground', label:'Ground', zIndex:-1 });
+
+  // Foundation
+  addPiece({ x: cx - 220*s, y: cy + 170*s, w: 440*s, h: 35*s, color: '#8a7a6a', strokeColor:'#6a5a4a', hp:8, type:'foundation', label:'Foundation', zIndex:0 });
+
+  // — WALLS —
+  // Left outer wall
+  addPiece({ x: cx - 220*s, y: cy - 130*s, w: 55*s, h: 300*s, color: '#d4b896', strokeColor:'#b09878', hp:6, type:'wall', label:'Left Wall', detail:['brick'], zIndex:1 });
+  // Right outer wall
+  addPiece({ x: cx + 165*s, y: cy - 130*s, w: 55*s, h: 300*s, color: '#d4b896', strokeColor:'#b09878', hp:6, type:'wall', label:'Right Wall', detail:['brick'], zIndex:1 });
+  // Front lower wall left
+  addPiece({ x: cx - 165*s, y: cy + 50*s,  w: 120*s, h: 120*s, color: '#d4b896', strokeColor:'#b09878', hp:4, type:'wall', label:'Front Wall', detail:['brick'], zIndex:1 });
+  // Front lower wall right
+  addPiece({ x: cx + 45*s, y: cy + 50*s,  w: 120*s, h: 120*s, color: '#d4b896', strokeColor:'#b09878', hp:4, type:'wall', label:'Front Wall', detail:['brick'], zIndex:1 });
+  // Front upper wall
+  addPiece({ x: cx - 165*s, y: cy - 130*s, w: 330*s, h: 80*s,  color: '#d4b896', strokeColor:'#b09878', hp:4, type:'wall', label:'Upper Wall', detail:['brick'], zIndex:1 });
+  // Back wall
+  addPiece({ x: cx - 165*s, y: cy - 130*s, w: 330*s, h: 300*s, color: '#c4a882', strokeColor:'#a08860', hp:8, type:'wall', label:'Back Wall', detail:['brick'], zIndex:0 });
+
+  // — WINDOWS —
+  addPiece({ x: cx - 155*s, y: cy - 80*s, w: 80*s, h: 70*s, color: '#aaccee', strokeColor:'#558899', hp:2, type:'window', label:'Window', detail:['glass'], zIndex:2 });
+  addPiece({ x: cx + 75*s, y: cy - 80*s, w: 80*s, h: 70*s, color: '#aaccee', strokeColor:'#558899', hp:2, type:'window', label:'Window', detail:['glass'], zIndex:2 });
+  // Window frames
+  addPiece({ x: cx - 162*s, y: cy - 87*s, w: 94*s, h: 84*s, color: 'rgba(0,0,0,0)', strokeColor:'#7a5533', hp:2, type:'frame', label:'Window Frame', zIndex:3 });
+  addPiece({ x: cx + 68*s, y: cy - 87*s, w: 94*s, h: 84*s, color: 'rgba(0,0,0,0)', strokeColor:'#7a5533', hp:2, type:'frame', label:'Window Frame', zIndex:3 });
+
+  // — DOOR —
+  addPiece({ x: cx - 40*s, y: cy + 10*s, w: 80*s, h: 160*s, color: '#8B4513', strokeColor:'#5c2e0a', hp:4, type:'door', label:'Front Door', detail:['wood'], zIndex:2 });
+  // Door frame
+  addPiece({ x: cx - 48*s, y: cy + 2*s, w: 96*s, h: 170*s, color: 'rgba(0,0,0,0)', strokeColor:'#5c2e0a', hp:3, type:'frame', label:'Door Frame', zIndex:3 });
+  // Door knob
+  addPiece({ x: cx + 22*s, y: cy + 92*s, w: 12*s, h: 12*s, color: '#ffcc33', strokeColor:'#cc9900', hp:1, type:'detail', label:'Doorknob', zIndex:4 });
+
+  // — PORCH —
+  addPiece({ x: cx - 140*s, y: cy + 165*s, w: 280*s, h: 18*s, color: '#a0784a', strokeColor:'#7a5533', hp:5, type:'porch', label:'Porch', detail:['wood'], zIndex:2 });
+  // Porch columns
+  addPiece({ x: cx - 130*s, y: cy - 10*s, w: 22*s, h: 180*s, color: '#e8ddd0', strokeColor:'#b8a898', hp:3, type:'column', label:'Column', zIndex:2 });
+  addPiece({ x: cx + 108*s, y: cy - 10*s, w: 22*s, h: 180*s, color: '#e8ddd0', strokeColor:'#b8a898', hp:3, type:'column', label:'Column', zIndex:2 });
+
+  // — ROOF SECTIONS —
+  // Main roof left slope
+  addPiece({
+    x: cx - 260*s, y: cy - 230*s,
+    w: 270*s, h: 120*s,
+    color: '#8b3a2a', strokeColor:'#5c2010',
+    hp: 8, type:'roof', label:'Roof Left',
+    detail:['shingles'], zIndex:4
+  });
+  // Main roof right slope
+  addPiece({
+    x: cx - 10*s, y: cy - 230*s,
+    w: 270*s, h: 120*s,
+    color: '#8b3a2a', strokeColor:'#5c2010',
+    hp: 8, type:'roof', label:'Roof Right',
+    detail:['shingles'], zIndex:4
+  });
+  // Roof ridge
+  addPiece({ x: cx - 20*s, y: cy - 245*s, w: 40*s, h: 30*s, color: '#6a2a1a', strokeColor:'#3a1008', hp:4, type:'roof', label:'Ridge', zIndex:5 });
+  // Gutters
+  addPiece({ x: cx - 260*s, y: cy - 120*s, w: 520*s, h: 14*s, color: '#888888', strokeColor:'#555', hp:3, type:'gutter', label:'Gutter', zIndex:5 });
+
+  // — CHIMNEY —
+  addPiece({ x: cx + 100*s, y: cy - 320*s, w: 55*s, h: 150*s, color: '#cc5533', strokeColor:'#882211', hp:5, type:'chimney', label:'Chimney', detail:['brick'], zIndex:6 });
+  addPiece({ x: cx + 95*s, y: cy - 330*s, w: 65*s, h: 18*s, color: '#aa3311', strokeColor:'#881100', hp:2, type:'chimney', label:'Chimney Cap', zIndex:7 });
+
+  // — ATTIC WINDOW —
+  addPiece({ x: cx - 30*s, y: cy - 210*s, w: 60*s, h: 55*s, color: '#aaccee', strokeColor:'#7a99bb', hp:2, type:'window', label:'Attic Window', detail:['glass'], zIndex:5 });
+
+  // — GARAGE (side) —
+  addPiece({ x: cx + 230*s, y: cy - 30*s, w: 160*s, h: 200*s, color: '#c8b090', strokeColor:'#a09070', hp:6, type:'wall', label:'Garage', detail:['brick'], zIndex:1 });
+  addPiece({ x: cx + 230*s, y: cy - 50*s, w: 160*s, h: 30*s, color: '#7a5533', strokeColor:'#5a3511', hp:3, type:'wall', label:'Garage Door Top', detail:['wood'], zIndex:2 });
+  // Garage door panels
+  addPiece({ x: cx + 235*s, y: cy - 22*s, w: 150*s, h: 180*s, color: '#b8a080', strokeColor:'#7a5533', hp:4, type:'door', label:'Garage Door', detail:['wood'], zIndex:2 });
+  // Garage roof
+  addPiece({ x: cx + 220*s, y: cy - 80*s, w: 180*s, h: 50*s, color: '#8b3a2a', strokeColor:'#5c2010', hp:5, type:'roof', label:'Garage Roof', detail:['shingles'], zIndex:4 });
+
+  // — FENCE —
+  for (let i = 0; i < 8; i++) {
+    addPiece({ x: cx - 430*s + i*55*s, y: cy + 80*s, w: 14*s, h: 90*s, color: '#ddd0b8', strokeColor:'#aa9988', hp:2, type:'fence', label:'Fence Post', zIndex:2 });
+    if (i < 7) addPiece({ x: cx - 416*s + i*55*s, y: cy + 100*s, w: 41*s, h: 12*s, color: '#ddd0b8', strokeColor:'#aa9988', hp:1, type:'fence', label:'Fence Rail', zIndex:2 });
+  }
+
+  // — MAILBOX —
+  addPiece({ x: cx - 410*s, y: cy + 120*s, w: 30*s, h: 45*s, color: '#cc3333', strokeColor:'#881111', hp:1, type:'detail', label:'Mailbox', zIndex:2 });
+
+  // — TREES / BUSHES —
+  addPiece({ x: cx + 420*s, y: cy + 0*s, w: 60*s, h: 170*s, color: '#2d5a1e', strokeColor:'#1a3a0e', hp:3, type:'tree', label:'Tree', zIndex:2 });
+  addPiece({ x: cx + 390*s, y: cy - 80*s, w: 120*s, h: 100*s, color: '#3a7a28', strokeColor:'#225015', hp:3, type:'tree', label:'Tree Leaves', zIndex:3 });
+  // Bushes
+  for (let i = 0; i < 3; i++) {
+    addPiece({ x: cx - 210*s + i*80*s, y: cy + 120*s, w: 55*s, h: 55*s, color: '#2d8020', strokeColor:'#1a5010', hp:2, type:'bush', label:'Bush', zIndex:2 });
+  }
+
+  // Count destroyable pieces (not ground)
+  totalDestroyable = pieces.filter(p => p.type !== 'ground' && p.hp < 999).length;
+
+  playerX = W / 2;
+  playerY = cy + 100 * s;
+}
+
+// ════════════════════════════════════════════
+//  DRAW PIECE
+// ════════════════════════════════════════════
+
+function drawPiece(p) {
+  if (p.destroyed && p.alpha <= 0) return;
+
+  ctx.save();
+
+  const cx = p.x + p.w / 2 + p.rot * 0.1;
+  const cy = p.y + p.h / 2;
+  ctx.translate(cx + camera.x, cy + camera.y);
+  ctx.rotate(p.rot);
+  ctx.globalAlpha = p.alpha;
+
+  const x = -p.w / 2, y = -p.h / 2;
+  const w = p.w, h = p.h;
+
+  // Damage cracks
+  const dmgRatio = 1 - (p.hp / p.maxHp);
+
+  ctx.fillStyle = p.color;
+  ctx.strokeStyle = p.strokeColor;
+  ctx.lineWidth = 1.5;
+
+  if (p.type === 'roof') {
+    // Trapezoidal roof
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.1, y + h);
+    ctx.lineTo(x + w * 0.9, y + h);
+    ctx.lineTo(x + w * 0.6, y);
+    ctx.lineTo(x + w * 0.4, y);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Shingles
+    if (p.detail.includes('shingles')) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 0.8;
+      for (let row = 1; row <= 4; row++) {
+        const ry = y + h * (row / 5);
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.1 + (w*0.8/5)*row*0.2, ry);
+        ctx.lineTo(x + w * 0.9 - (w*0.8/5)*row*0.2, ry);
+        ctx.stroke();
+      }
+    }
+  } else {
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+  }
+
+  // Detail overlays
+  if (p.detail.includes('brick')) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 0.8;
+    const bh = Math.max(10, h / 6);
+    for (let row = 0; row * bh < h; row++) {
+      const offset = (row % 2) * (w / 4);
+      for (let col = -1; col < w / (w / 4) + 1; col++) {
+        const bx = x + col * (w / 4) + offset;
+        ctx.strokeRect(bx, y + row * bh, w / 4, bh);
+      }
+    }
+  }
+
+  if (p.detail.includes('wood')) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 0.8;
+    for (let i = 1; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + h * (i / 5));
+      ctx.lineTo(x + w, y + h * (i / 5));
+      ctx.stroke();
+    }
+  }
+
+  if (p.detail.includes('glass')) {
+    // Glass shine
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(x + w * 0.1, y + h * 0.1, w * 0.35, h * 0.35);
+    ctx.fillRect(x + w * 0.55, y + h * 0.1, w * 0.2, h * 0.15);
+    // Cross divider
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x + w/2, y); ctx.lineTo(x + w/2, y + h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + h/2); ctx.lineTo(x + w, y + h/2); ctx.stroke();
+  }
+
+  // Damage cracks overlay
+  if (dmgRatio > 0.3) {
+    ctx.strokeStyle = `rgba(0,0,0,${dmgRatio * 0.6})`;
+    ctx.lineWidth = 1;
+    for (let c = 0; c < Math.floor(dmgRatio * 5); c++) {
+      const sx = x + Math.random() * w;
+      const sy = y + Math.random() * h;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + (Math.random() - 0.5) * 30, sy + (Math.random() - 0.5) * 30);
+      ctx.stroke();
+    }
+  }
+
+  // HP bar above piece (when damaged)
+  if (p.hp < p.maxHp && p.hp > 0 && !p.destroyed) {
+    const barW = Math.min(w, 60);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-barW/2, y - 8, barW, 5);
+    ctx.fillStyle = p.hp / p.maxHp > 0.5 ? '#4caf50' : p.hp / p.maxHp > 0.25 ? '#ff9800' : '#f44336';
+    ctx.fillRect(-barW/2, y - 8, barW * (p.hp / p.maxHp), 5);
+  }
+
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════
+//  PLAYER
+// ════════════════════════════════════════════
+
+function drawPlayer() {
+  const px = playerX + camera.x;
+  const py = playerY + camera.y;
+
+  ctx.save();
+  ctx.translate(px, py);
+
+  const t = playerAnim;
+  const legSwing = Math.sin(t * 0.1) * 8;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, 35, 18, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs
+  ctx.fillStyle = '#2244aa';
+  ctx.fillRect(-14 * playerDir + (legSwing > 0 ? legSwing : 0), 16, 12, 20);
+  ctx.fillRect(2 * playerDir - (legSwing > 0 ? 0 : -legSwing), 16, 12, 20);
+
+  // Boots
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-14 * playerDir + (legSwing > 0 ? legSwing : 0), 33, 13, 6);
+  ctx.fillRect(2 * playerDir - (legSwing > 0 ? 0 : -legSwing), 33, 13, 6);
+
+  // Body
+  const powerColor = POWERS[currentPower]?.color || '#ff5500';
+  ctx.fillStyle = powerColor;
+  ctx.fillRect(-12, -10, 24, 26);
+
+  // Arms
+  const armSwing = Math.sin(t * 0.1 + Math.PI) * 8;
+  ctx.fillStyle = '#cc4422';
+  // Attack arm pose
+  ctx.save();
+  ctx.translate(14 * playerDir, -2);
+  ctx.rotate(armSwing * 0.05 * playerDir);
+  ctx.fillRect(0, 0, 10 * playerDir, 18);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(-14 * playerDir, -2);
+  ctx.rotate(-armSwing * 0.05 * playerDir);
+  ctx.fillRect(-10 * playerDir, 0, 10 * playerDir, 18);
+  ctx.restore();
+
+  // Head
+  ctx.fillStyle = '#ffcc99';
+  ctx.beginPath();
+  ctx.roundRect(-11, -28, 22, 22, 5);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#222';
+  ctx.fillRect(3 * playerDir, -22, 4, 4);
+
+  // Power effect aura
+  if (currentPower !== 'fist') {
+    ctx.strokeStyle = powerColor;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.3 + Math.sin(t * 0.15) * 0.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Psychic ring
+  if (currentPower === 'psychic') {
+    ctx.strokeStyle = '#aa55ff';
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.arc(0, -10, 50 + Math.sin(t * 0.1) * 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════
+//  PARTICLES
+// ════════════════════════════════════════════
+
+function spawnParticles(x, y, color, count, type='debris') {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * (type === 'explosion' ? 12 : 6);
+    particles.push({
+      x: x + camera.x, y: y + camera.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (type === 'explosion' ? 8 : 3),
+      life: 1,
+      decay: 0.02 + Math.random() * 0.04,
+      size: 3 + Math.random() * (type === 'explosion' ? 12 : 6),
+      color,
+      gravity: 0.3,
+      type
+    });
+  }
+}
+
+function updateParticles() {
+  pCtx.clearRect(0, 0, W, H);
+  particles = particles.filter(p => p.life > 0);
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += p.gravity;
+    p.vx *= 0.97;
+    p.life -= p.decay;
+
+    pCtx.globalAlpha = Math.max(0, p.life);
+    pCtx.fillStyle = p.color;
+    if (p.type === 'explosion') {
+      pCtx.beginPath();
+      pCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      pCtx.fill();
+    } else {
+      pCtx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+    }
+  }
+  pCtx.globalAlpha = 1;
+}
+
+// ════════════════════════════════════════════
+//  SMASH LOGIC
+// ════════════════════════════════════════════
+
+function smash(worldX, worldY) {
+  if (!gameRunning) return;
+
+  const pw = POWERS[currentPower];
+  const radius = pw.radius;
+  const damage = pw.damage;
+  let hit = false;
+
+  // Screen shake
+  triggerShake();
+
+  // Particles
+  const pColor = pw.color;
+  spawnParticles(worldX, worldY, pColor, damage * 5 + 5,
+    currentPower === 'explosion' ? 'explosion' : 'debris');
+
+  for (const p of pieces) {
+    if (p.destroyed || p.hp >= 999) continue;
+
+    const pcx = p.x + p.w / 2;
+    const pcy = p.y + p.h / 2;
+    const dist = Math.hypot(pcx - worldX, pcy - worldY);
+
+    if (dist < radius + Math.max(p.w, p.h) / 2) {
+      p.hp -= damage;
+      hit = true;
+
+      // Spawn material particles
+      spawnParticles(pcx, pcy, p.color, 4 + damage * 2);
+
+      if (p.hp <= 0 && !p.destroyed) {
+        destroyPiece(p);
+      }
+    }
+  }
+
+  if (hit) {
+    combo++;
+    clearTimeout(comboTimer);
+    comboTimer = setTimeout(() => { combo = 0; }, 2000);
+
+    const pts = 10 * combo * damage;
+    score += pts;
+    showCombo();
+    updateHUD();
+    checkUnlocks();
+  }
+}
+
+function destroyPiece(p) {
+  p.destroyed = true;
+  p.falling = true;
+  p.vx = (Math.random() - 0.5) * 8;
+  p.vy = -(2 + Math.random() * 4);
+  p.rotV = (Math.random() - 0.5) * 0.15;
+  destroyed++;
+
+  // Spawn chunks (fracture into 2-4 smaller pieces)
+  const fragments = p.type === 'detail' || p.type === 'fence' ? 2 : 3;
+  for (let i = 0; i < fragments; i++) {
+    const fw = p.w / 2 + Math.random() * p.w * 0.3;
+    const fh = p.h / 2 + Math.random() * p.h * 0.3;
+    if (fw > 15 && fh > 15) {
+      spawnParticles(p.x + p.w/2, p.y + p.h/2, p.color, 8, 'debris');
+    }
+  }
+
+  document.querySelector('#destroyBar').style.width = (destroyed / totalDestroyable * 100) + '%';
+}
+
+function triggerShake() {
+  shaking = true;
+  shakeTime = 8;
+}
+
+// ════════════════════════════════════════════
+//  GAME LOOP
+// ════════════════════════════════════════════
+
+let lastFrame = 0;
+
+function gameLoop(ts) {
+  if (!gameRunning) return;
+  requestAnimationFrame(gameLoop);
+
+  const dt = Math.min(ts - lastFrame, 50);
+  lastFrame = ts;
+
+  playerAnim++;
+
+  // Camera shake
+  let shakeX = 0, shakeY = 0;
+  if (shaking) {
+    shakeX = (Math.random() - 0.5) * 10;
+    shakeY = (Math.random() - 0.5) * 10;
+    shakeTime--;
+    if (shakeTime <= 0) shaking = false;
+  }
+
+  // Player movement
+  const speed = 4;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) { playerX -= speed; playerDir = -1; }
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) { playerX += speed; playerDir = 1; }
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) playerY -= speed;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) playerY += speed;
+
+  // Camera follow
+  const targetCamX = W / 2 - playerX + shakeX;
+  const targetCamY = H / 2 - playerY + shakeY;
+  camera.x += (targetCamX - camera.x) * 0.1;
+  camera.y += (targetCamY - camera.y) * 0.1;
+
+  // Update falling pieces
+  for (const p of pieces) {
+    if (p.falling) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.4; // gravity
+      p.rot += p.rotV;
+      p.vx *= 0.95;
+      if (p.destroyed) {
+        p.alpha -= 0.015;
+        if (p.alpha < 0) p.alpha = 0;
+      }
+    }
+  }
+
+  // Draw
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, '#87ceeb');
+  skyGrad.addColorStop(0.6, '#c8e6f5');
+  skyGrad.addColorStop(1, '#e8d5a0');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Clouds
+  drawClouds();
+
+  // Sort pieces by zIndex then y
+  const sorted = [...pieces].sort((a, b) => a.zIndex - b.zIndex || a.y - b.y);
+
+  for (const p of sorted) {
+    if (p.alpha > 0) drawPiece(p);
+  }
+
+  drawPlayer();
+  updateParticles();
+
+  // Power aura on click
+  if (currentPower === 'psychic') {
+    const worldMX = mouseX - camera.x;
+    const worldMY = mouseY - camera.y;
+    ctx.strokeStyle = '#aa55ff';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.arc(worldMX + camera.x, worldMY + camera.y, POWERS.psychic.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ════════════════════════════════════════════
+//  CLOUDS
+// ════════════════════════════════════════════
+
+const clouds = Array.from({length: 5}, () => ({
+  x: Math.random() * 2000 - 500,
+  y: 30 + Math.random() * 150,
+  w: 120 + Math.random() * 180,
+  speed: 0.2 + Math.random() * 0.3
+}));
+
+function drawClouds() {
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (const c of clouds) {
+    c.x += c.speed;
+    if (c.x > W + 300) c.x = -400;
+    const cx = c.x;
+    const cy = c.y;
+    const r = c.w / 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.8, cy - r * 0.3, r * 1.2, 0, Math.PI * 2);
+    ctx.arc(cx + r * 1.8, cy, r * 0.9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    const tv = document.getElementById('timerValue');
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    tv.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (timeLeft <= 30) tv.classList.add('danger');
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+// ════════════════════════════════════════════
+//  HUD
+// ════════════════════════════════════════════
+
+function updateHUD() {
+  document.getElementById('scoreValue').textContent = score.toLocaleString();
+}
+
+function showCombo() {
+  const el = document.getElementById('comboDisplay');
+  el.textContent = combo > 1 ? `COMBO x${combo}!` : '';
+  el.style.opacity = combo > 1 ? '1' : '0';
+  el.style.fontSize = Math.min(4, 1.5 + combo * 0.2) + 'rem';
+}
+
+// ════════════════════════════════════════════
+//  POWERS
+// ════════════════════════════════════════════
+
+function selectPower(name) {
+  if (!unlockedPowers.has(name)) return;
+  currentPower = name;
+  document.querySelectorAll('.power-slot').forEach(s => s.classList.remove('active'));
+  document.querySelector(`[data-power="${name}"]`)?.classList.add('active');
+}
+
+function checkUnlocks() {
+  let newUnlock = null;
+  for (const [name, pw] of Object.entries(POWERS)) {
+    if (score >= pw.unlockAt && !unlockedPowers.has(name)) {
+      unlockedPowers.add(name);
+      const slot = document.querySelector(`[data-power="${name}"]`);
+      if (slot) slot.classList.remove('locked');
+      newUnlock = name;
+    }
+  }
+  if (newUnlock) {
+    const icons = { hammer:'🔨', chainsaw:'⚡', psychic:'🌀', explosion:'💥' };
+    showToast(`🔓 UNLOCKED: ${newUnlock.toUpperCase()}`, `Press the ${icons[newUnlock]} button to equip!`);
+  }
+}
+
+function showToast(title, text) {
+  const toast = document.getElementById('unlockToast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastText').textContent = text;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+// ════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════
+
+function updateLeaderboard() {
+  leaderboard[4].score = score;
+  const sorted = [...leaderboard].sort((a, b) => b.score - a.score);
+  const el = document.getElementById('lbEntries');
+  el.innerHTML = sorted.slice(0, 5).map((e, i) => `
+    <div class="lb-entry">
+      <span class="lb-rank">${i+1}</span>
+      <span class="lb-name">${e.name}</span>
+      <span class="lb-score">${e.score.toLocaleString()}</span>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════
+//  GAME START / END
+// ════════════════════════════════════════════
+
+function startGame() {
+  score = 0;
+  timeLeft = 180;
+  combo = 0;
+  destroyed = 0;
+  particles = [];
+  currentPower = 'fist';
+  unlockedPowers = new Set(['fist']);
+  camera = { x: 0, y: 0 };
+
+  // Reset power slots
+  document.querySelectorAll('.power-slot').forEach(s => {
+    s.classList.remove('active', 'locked');
+    const name = s.dataset.power;
+    if (POWERS[name].unlockAt > 0) s.classList.add('locked');
+  });
+  document.querySelector('[data-power="fist"]').classList.add('active');
+
+  buildHouse();
+
+  document.getElementById('titleScreen').style.opacity = '0';
+  setTimeout(() => document.getElementById('titleScreen').style.display = 'none', 600);
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('gameCanvas').style.display = 'block';
+  document.getElementById('hud').style.display = 'flex';
+  document.getElementById('powerBar').style.display = 'flex';
+  document.getElementById('leaderboardPanel').style.display = 'block';
+  document.getElementById('crosshair').style.display = 'block';
+  document.getElementById('timerValue').classList.remove('danger');
+  document.getElementById('destroyBar').style.width = '0%';
+
+  updateHUD();
+  updateLeaderboard();
+
+  gameRunning = true;
+  lastFrame = performance.now();
+  requestAnimationFrame(gameLoop);
+  startTimer();
+
+  setInterval(updateLeaderboard, 1000);
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(timerInterval);
+
+  const destructPct = Math.round(destroyed / totalDestroyable * 100);
+  const won = destructPct >= 100;
+
+  document.getElementById('endTitle').textContent = won ? '🏠 DEMOLISHED!' : 'TIME\'S UP!';
+  document.getElementById('endTitle').style.color = won ? '#ff6a00' : '#ffd200';
+  document.getElementById('endScoreVal').textContent = score.toLocaleString();
+  document.getElementById('endDestructionText').textContent = `${destructPct}% DESTROYED`;
+  document.getElementById('endScreen').style.display = 'flex';
+
+  updateLeaderboard();
+}
+
+function showTitle() {
+  gameRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('gameCanvas').style.display = 'none';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('powerBar').style.display = 'none';
+  document.getElementById('leaderboardPanel').style.display = 'none';
+  document.getElementById('crosshair').style.display = 'none';
+  const ts = document.getElementById('titleScreen');
+  ts.style.display = 'flex';
+  setTimeout(() => ts.style.opacity = '1', 10);
+}
+
+// ════════════════════════════════════════════
+//  INPUT
+// ════════════════════════════════════════════
+
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === '1') selectPower('fist');
+  if (e.key === '2') selectPower('hammer');
+  if (e.key === '3') selectPower('chainsaw');
+  if (e.key === '4') selectPower('psychic');
+  if (e.key === '5') selectPower('explosion');
+});
+
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+window.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+canvas.addEventListener('click', e => {
+  if (!gameRunning) return;
+  const worldX = e.clientX - camera.x;
+  const worldY = e.clientY - camera.y;
+  smash(worldX, worldY);
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (!gameRunning) return;
+  const worldX = e.clientX - camera.x;
+  const worldY = e.clientY - camera.y;
+  // Right click = big smash
+  const original = POWERS[currentPower].damage;
+  POWERS[currentPower].damage *= 3;
+  smash(worldX, worldY);
+  POWERS[currentPower].damage = original;
+});
+
+// Prevent context menu
+window.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
